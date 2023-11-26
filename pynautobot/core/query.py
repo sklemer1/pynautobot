@@ -140,6 +140,7 @@ class Request:
         offset=None,
         key=None,
         token=None,
+        auth_header=None,
         threading=False,
         max_workers=4,
         api_version=None,
@@ -165,6 +166,10 @@ class Request:
         self.filters = filters
         self.key = key
         self.token = token
+        if auth_header:
+            self.auth_header = auth_header
+        else:
+            self.auth_header = f"Token {self.token}"
         self.http_session = http_session
         self.url = f"{self.base}{key}/" if key else self.base
         self.threading = threading
@@ -182,6 +187,8 @@ class Request:
 
         if self.api_version:
             headers["accept"] = f"application/json; version={self.api_version}"
+        if self.auth_header:
+            headers["authorization"] = self.auth_header
 
         try:
             req = self.http_session.get(
@@ -213,7 +220,8 @@ class Request:
         }
         if self.api_version:
             headers["accept"] = f"application/json; version={self.api_version}"
-
+        if self.auth_header:
+            headers["authorization"] = self.auth_header
         try:
             req = self.http_session.get(
                 self.normalize_url(self.base),
@@ -239,8 +247,8 @@ class Request:
             "Content-Type": "application/json;",
             "Authorization": f"Token {self.token}",
         }
-        if self.token:
-            headers["authorization"] = f"Token {self.token}"
+        if self.auth_header:
+            headers["authorization"] = self.auth_header
 
         if self.api_version:
             headers["accept"] = f"application/json; version={self.api_version}"
@@ -271,8 +279,8 @@ class Request:
         else:
             headers = {"accept": "application/json;"}
 
-        if self.token:
-            headers["authorization"] = f"Token {self.token}"
+        if self.auth_header:
+            headers["authorization"] = self.auth_header
 
         if self.api_version:
             headers["accept"] = f"application/json; version={self.api_version}"
