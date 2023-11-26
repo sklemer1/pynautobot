@@ -31,6 +31,7 @@ class Api(object):
     Args:
         url (str): The base URL of the Nautobot instance you want to connect to.
         token (str): Your Nautobot authentication token.
+        auth_header (str): Content of the ``Authorization``-Header, e.g. for Bearer Token.
         threading (bool, optional): Enable threading for `.all()` and `.filter()`
             requests. Defaults to `False`.
         max_workers (int, optional): The maximum number of worker threads to use
@@ -65,12 +66,22 @@ class Api(object):
         ...     token='d6f4e314a5b5fefd164995169f28ae32d987704f'
         ... )
         >>> nb.dcim.devices.all()
+
+        or for oauth2 flows
+
+    >>> import pynautobot
+    >>> nb = pynautobot.api(
+    ...     'http://localhost:8000',
+    ...     auth_header='Bearer keycloak eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSl...'
+    ... )
+    >>> nb.dcim.devices.all()
     """
 
     def __init__(
         self,
         url,
         token=None,
+        auth_header=None,
         threading=False,
         max_workers=4,
         api_version=None,
@@ -81,7 +92,11 @@ class Api(object):
 
         base_url = "{}/api".format(url if url[-1] != "/" else url[:-1])
         self.token = token
-        self.headers = {"Authorization": f"Token {self.token}"}
+        if auth_header:
+            self.auth_header = auth_header
+        else:
+            self.auth_header = f"Token {self.token}"
+        self.headers = {"Authorization": self.auth_header}
         self.base_url = base_url
         self.http_session = requests.Session()
         self.http_session.verify = verify
@@ -146,7 +161,7 @@ class Api(object):
             base=self.base_url,
             http_session=self.http_session,
             api_version=self.api_version,
-            token=self.token,
+            auth_header=self.auth_header,
         ).get_version()
 
     def openapi(self):
@@ -178,7 +193,7 @@ class Api(object):
             base=self.base_url,
             http_session=self.http_session,
             api_version=self.api_version,
-            token=self.token,
+            auth_header=self.auth_header,
         ).get_openapi()
 
     def status(self):
@@ -217,7 +232,7 @@ class Api(object):
         """
         return Request(
             base=self.base_url,
-            token=self.token,
+            auth_header=self.auth_header,
             http_session=self.http_session,
             api_version=self.api_version,
         ).get_status()
